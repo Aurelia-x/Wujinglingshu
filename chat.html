@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AI对话助手</title>
+    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: roboto, sans-serif;
+            margin: 2em;
+            color: #3d3d3d;
+        }
+        .chat-container {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+        .chat-messages {
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 1em;
+            margin-bottom: 1em;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 1em;
+            padding: 0.5em;
+            border-radius: 4px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 2em;
+        }
+        .ai-message {
+            background-color: #f5f5f5;
+            margin-right: 2em;
+        }
+        .chat-input {
+            display: flex;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 0.5em;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-right: 0.5em;
+        }
+        .back-button {
+            margin-bottom: 1em;
+        }
+        .controls {
+            margin-bottom: 1em;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <button class="mdc-button back-button" onclick="window.location.href='index.html'">
+        <span class="mdc-button__label">返回主页</span>
+    </button>
+    
+    <h1>AI对话助手</h1>
+    
+    <div class="controls">
+        <button id="clearButton" class="mdc-button">
+            <span class="mdc-button__label">清空对话历史</span>
+        </button>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai-message">
+                您好！我是您的AI助手。请问有什么我可以帮助您的吗？
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="输入您的问题...">
+            <button id="sendButton" class="mdc-button mdc-button--raised">
+                <span class="mdc-button__label">发送</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const clearButton = document.getElementById('clearButton');
+            
+            let currentAiMessage = null;
+            let isWaitingForResponse = false;
+            
+            function addMessage(text, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+                messageDiv.textContent = text;
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                return messageDiv;
+            }
+            
+            function showLoading() {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'message ai-message';
+                loadingDiv.id = 'loadingMessage';
+                loadingDiv.innerHTML = '思考中<span class="loading"></span>';
+                chatMessages.appendChild(loadingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function hideLoading() {
+                const loadingMessage = document.getElementById('loadingMessage');
+                if (loadingMessage) {
+                    loadingMessage.remove();
+                }
+            }
+            
+            async function sendMessage() {
+                const message = messageInput.value.trim();
+                if (!message || isWaitingForResponse) return;
+                
+                messageInput.value = '';
+                addMessage(message, true);
+                showLoading();
+                isWaitingForResponse = true;
+                
+                try {
+                    // 创建新的AI消息容器
+                    currentAiMessage = document.createElement('div');
+                    currentAiMessage.className = 'message ai-message';
+                    chatMessages.appendChild(currentAiMessage);
+                    
+                    // 隐藏加载指示器
+                    hideLoading();
+                    
+                    // 发送请求到后端
+                    const response = await fetch('http://localhost:5000/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            user_id: 'default_user' // 简单的用户标识
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('网络响应不正常');
+                    }
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+                        
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.slice(6));
+                                    if (data.content) {
+                                        currentAiMessage.textContent += data.content;
+                                    }
+                                    if (data.done) {
+                                        isWaitingForResponse = false;
+                                    }
+                                } catch (e) {
+                                    // 忽略解析错误
+                                }
+                            }
+                        }
+                        
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                } catch (error) {
+                    hideLoading();
+                    if (currentAiMessage) {
+                        currentAiMessage.textContent = '抱歉，发生了错误，请稍后再试。';
+                    } else {
+                        addMessage('抱歉，发生了错误，请稍后再试。');
+                    }
+                    isWaitingForResponse = false;
+                    console.error('Error:', error);
+                }
+            }
+            
+            async function clearHistory() {
+                try {
+                    const response = await fetch('http://localhost:5000/clear_history', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: 'default_user'
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        // 清空前端聊天记录，只保留第一条欢迎消息
+                        const messages = chatMessages.querySelectorAll('.message');
+                        for (let i = 1; i < messages.length; i++) {
+                            messages[i].remove();
+                        }
+                        alert('对话历史已清空');
+                    }
+                } catch (error) {
+                    console.error('Error clearing history:', error);
+                }
+            }
+            
+            sendButton.addEventListener('click', sendMessage);
+            clearButton.addEventListener('click', clearHistory);
+            
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

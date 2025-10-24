@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>骨架识别与AI对话系统</title>
+    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: roboto, sans-serif;
+            margin: 2em;
+            color: #3d3d3d;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .card {
+            margin: 2em 0;
+            padding: 1.5em;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        h1 {
+            margin-bottom: 1em;
+        }
+        p {
+            margin: 1em 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>骨架识别与AI对话系统</h1>
+        
+        <div class="card">
+            <h2>实时骨架识别</h2>
+            <p>使用摄像头实时检测和追踪人体骨架关键点</p>
+            <button id="poseButton" class="mdc-button mdc-button--raised">
+                <span class="mdc-button__label">进入骨架识别</span>
+            </button>
+        </div>
+        
+        <div class="card">
+            <h2>AI对话助手</h2>
+            <p>与智能AI助手进行自然对话</p>
+            <button id="chatButton" class="mdc-button mdc-button--raised">
+                <span class="mdc-button__label">进入AI对话</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('poseButton').addEventListener('click', function() {
+            window.location.href = 'pose.html';
+        });
+        
+        document.getElementById('chatButton').addEventListener('click', function() {
+            window.location.href = 'chat.html';
+        });
+    </script>
+</body>
+</html>
