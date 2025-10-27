@@ -1,4 +1,4 @@
-    #对骨架文件进行配对，输入在./caminput文件夹，样本在./test_files/video_output文件夹（之后可能再改动来提高精度）
+    #对骨架文件进行配对，输入在./caminput文件夹，样本在./test_files/video_output文件夹（之后可能再改动来提高精度）对于智能语言播报，可以选取每一个动作的结束动作与摄像头输入进行配对，配对成功则自动播报下一项动作的语音
 import json
 import math
 import os
@@ -109,4 +109,5 @@ def main():
         print("匹配结果: " + ("成功" if best_score < match_threshold else "失败"))
 
 if __name__ == "__main__":
+
     main()
