@@ -65,20 +65,6 @@ def calculate_skeleton_similarity(input_skel: Dict, sample_skel: Dict) -> float:
     # 返回平均距离作为相似度评分（越小越相似）
     return total_distance / valid_points if valid_points > 0 else float('inf')
 
-def motion_match_or_not(keymotion_path:str,input_file:str) ->bool:
-    matchscore=calculate_skeleton_similarity(load_skeleton(input_file),load_skeleton(keymotion_path))
-    if matchscore<=0.31 :
-        return True
-    else :
-        print(f"\033[31m{matchscore}\033[0m")
-        return False
-
-
-
-
-
-
-
 def find_best_match(input_skel: Dict, sample_skels: List[Tuple[str, Dict]]) -> Tuple[str, float]:
     """在样本骨架列表中找到与输入骨架最匹配的样本（返回文件名和评分）"""
     best_filename = None
@@ -95,7 +81,7 @@ def find_best_match(input_skel: Dict, sample_skels: List[Tuple[str, Dict]]) -> T
 def main():
     # 配置文件夹路径
     input_dir = "./caminput"
-    sample_dir = "./test_files/keymotion"
+    sample_dir = "./test_files/video_output"
     
     # 加载所有输入骨架和样本骨架
     print(f"正在加载输入骨架（{input_dir}）...")

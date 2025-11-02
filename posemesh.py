@@ -120,7 +120,7 @@ def detect_pose_with_reduced_head(image, output_path=None):
         
         if output_path:
             cv2.imwrite(output_path, image)
-            print(f"处理后的图像已保存至: {output_path}")
+            #print(f"处理后的图像已保存至: {output_path}")
             return True, results.pose_landmarks
         else:
             return True, results.pose_landmarks
@@ -128,7 +128,7 @@ def detect_pose_with_reduced_head(image, output_path=None):
 def get_universal_skeleton_coords(landmarks):
     """从landmarks获取人体骨架的通用标准化坐标"""
     if not landmarks:
-        print("未检测到人体姿态")
+        #print("未检测到人体姿态")
         return None
     
     # 提取并标准化关键点坐标
@@ -158,7 +158,7 @@ def add_tag_to_json_data(file_path, tags):
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
         
-        print(f"已成功添加标签字段: {tags}")
+        #print(f"已成功添加标签字段: {tags}")
         
     except Exception as e:
         print(f"操作失败：{str(e)}")
@@ -167,7 +167,7 @@ def save_skeleton_data(skeleton_data, output_path):
     """将骨架坐标数据保存为JSON文件"""
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(skeleton_data, f, ensure_ascii=False, indent=4)
-    print(f"骨架坐标数据已保存至: {output_path}")
+    #print(f"骨架坐标数据已保存至: {output_path}")
 
 def process_video(video_path, output_folder, interval=15):
     """
@@ -247,6 +247,19 @@ def process_video(video_path, output_folder, interval=15):
     cap.release()
     print(f"\n视频处理完成，共截取 {extract_count} 帧")
     print(f"结果保存至: {output_folder}")
+
+def process_camera(camera_path, output_folder):
+    success, landmarks = detect_pose_with_reduced_head(camera_path)
+    if success and landmarks:
+         # 获取骨架数据
+        skeleton_data = get_universal_skeleton_coords(landmarks)
+        if skeleton_data:
+             # 保存骨架数据
+            save_skeleton_data(skeleton_data, output_folder)
+
+
+
+
 
 if __name__ == "__main__":
     # 视频路径和输出文件夹
