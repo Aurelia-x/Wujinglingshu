@@ -8,7 +8,7 @@ CORS(app)  # 允许跨域请求
 
 # 初始化OpenAI客户端
 client = OpenAI(
-    api_key="sk-fd6c61fe94e94f4988737f7ffbc4c51e",
+    api_key="sk-xtlpxfyxxbnxkvpmjtgfutsuhpvjcxsuylintjldvaqtmdmy",
     base_url="https://api.siliconflow.cn/v1"
 )
 
