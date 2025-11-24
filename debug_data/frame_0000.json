@@ -1,0 +1,102 @@
+{
+  "left_shoulder": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "right_shoulder": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "left_elbow": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "right_elbow": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "left_wrist": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "right_wrist": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "left_hip": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "right_hip": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "left_knee": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "right_knee": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "left_ankle": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "right_ankle": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "left_heel": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "right_heel": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "left_foot_index": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "right_foot_index": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "visibility": 0
+  },
+  "type": "video_frame",
+  "frame_number": 0,
+  "time_seconds": 2.419,
+  "time_format": "0:00:02"
+}

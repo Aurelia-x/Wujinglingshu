@@ -9,24 +9,31 @@ class PoseDetector {
         this.poseLandmarker = null;
         this.webcamRunning = false;
         this.lastVideoTime = -1;
-        this.webcamStream = null; // 新增：保存摄像头流引用
-        this.runningMode = "IMAGE"; // 初始模式
-        this.frameCount = 0; // 新增：帧计数器
-        this.startTime = null; // 新增：开始时间
-        this.sendInterval = 500; // 发送间隔(ms)，可调整
-        this.lastSendTime = 0; // 上次发送时间戳
-        this.animationFrameId = null; // 新增：用于跟踪动画帧
-                
-        // 后端连接状态相关
+        this.webcamStream = null;
+        this.runningMode = "IMAGE";
+        this.frameCount = 0;
+        this.startTime = null;
+        this.sendInterval = 1000; // 大幅降低发送频率到1秒
+        this.lastSendTime = 0;
+        this.animationFrameId = null;
+        
+        // 后端连接状态
         this.backendAvailable = true;
         this.backendRetryCount = 0;
-        this.maxRetryCount = 3;
+        this.maxRetryCount = 2;
+        
+        // 状态显示元素
+        this.cameraStatusElement = document.getElementById('cameraStatus');
+        this.backendStatusElement = document.getElementById('backendStatus');
+        this.frameCountElement = document.getElementById('frameCount');
+        
         this.init();
     }
 
     async init() {
         try {
-            // 初始化MediaPipe
+            this.updateStatus('backendStatus', '初始化中...', 'orange');
+            
             const vision = await FilesetResolver.forVisionTasks(
                 "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
             );
@@ -37,13 +44,15 @@ class PoseDetector {
                     delegate: "GPU"
                 },
                 runningMode: this.runningMode,
-                numPoses: 1 // 可以检测多个人
+                numPoses: 1
             });
 
             this.setupWebcam();
             console.log("PoseLandmarker 初始化完成");
+            this.updateStatus('backendStatus', '就绪', 'green');
         } catch (error) {
             console.error("初始化失败:", error);
+            this.updateStatus('backendStatus', '初始化失败', 'red');
             alert("模型加载失败，请刷新页面重试");
         }
     }
@@ -57,11 +66,11 @@ class PoseDetector {
         const enableWebcamButton = document.getElementById("webcamButton");
         enableWebcamButton.addEventListener("click", () => this.enableCam());
         
-        // 检查浏览器支持
         if (!this.hasGetUserMedia()) {
             console.warn("getUserMedia() is not supported by your browser");
             enableWebcamButton.disabled = true;
             enableWebcamButton.innerText = "浏览器不支持摄像头";
+            this.updateStatus('cameraStatus', '浏览器不支持', 'red');
         }
     }
 
@@ -76,10 +85,8 @@ class PoseDetector {
         }
 
         if (this.webcamRunning) {
-            // 停止摄像头和检测
             this.stopWebcam();
         } else {
-            // 开启摄像头和检测
             await this.startWebcam();
         }
     }
@@ -87,23 +94,23 @@ class PoseDetector {
     async startWebcam() {
         this.webcamRunning = true;
         document.getElementById("webcamButton").innerText = "停止摄像头";
-        this.frameCount = 0; // 重置帧计数器
-        this.startTime = Date.now(); // 记录开始时间
+        this.frameCount = 0;
+        this.startTime = Date.now();
+        this.updateStatus('cameraStatus', '启动中...', 'orange');
         
         try {
-            // 获取摄像头权限
+            // 简化摄像头配置
             const constraints = { 
                 video: { 
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    frameRate: { ideal: 30, max: 30 } // 限制帧率
+                    width: { ideal: 640 },
+                    height: { ideal: 480 },
+                    frameRate: { ideal: 15 } // 降低帧率
                 } 
             };
             
             this.webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
             this.video.srcObject = this.webcamStream;
             
-            // 等待视频加载完成
             await new Promise((resolve) => {
                 this.video.addEventListener('loadeddata', resolve, { once: true });
             });
@@ -114,11 +121,12 @@ class PoseDetector {
                 await this.poseLandmarker.setOptions({ runningMode: "VIDEO" });
             }
             
-            // this.video.addEventListener("loadeddata", () => this.predictWebcam());
+            this.updateStatus('cameraStatus', '运行中', 'green');
             this.predictWebcam();
 
         } catch (err) {
             console.error("无法访问摄像头:", err);
+            this.updateStatus('cameraStatus', '访问失败', 'red');
             alert("无法访问摄像头，请确保已授予摄像头权限");
             this.webcamRunning = false;
             document.getElementById("webcamButton").innerText = "开启摄像头";
@@ -128,14 +136,13 @@ class PoseDetector {
     stopWebcam() {
         this.webcamRunning = false;
         document.getElementById("webcamButton").innerText = "开启摄像头";
+        this.updateStatus('cameraStatus', '已停止', 'gray');
         
-        // 取消动画帧
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
             this.animationFrameId = null;
         }
 
-        // 停止所有视频轨道
         if (this.webcamStream) {
             this.webcamStream.getTracks().forEach(track => {
                 track.stop();
@@ -143,57 +150,9 @@ class PoseDetector {
             this.webcamStream = null;
         }
         
-        // 清空视频源
         this.video.srcObject = null;
-        
-        // 清空画布
         this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
     }
-
-    // async predictWebcam() {
-    //     // 安全检查
-    //     if (!this.webcamRunning || !this.poseLandmarker) {
-    //         return;
-    //     }
-
-    //     // 设置canvas尺寸与视频一致
-    //     if (this.video.videoWidth && this.video.videoHeight) {
-    //         this.canvasElement.width = this.video.videoWidth;
-    //         this.canvasElement.height = this.video.videoHeight;
-    //     }
-
-    //     // 只在视频帧更新时检测
-    //     if (this.lastVideoTime !== this.video.currentTime) {
-    //         this.lastVideoTime = this.video.currentTime;
-    //         const startTimeMs = performance.now();
-            
-    //         // 使用回调函数方式检测姿势（官方推荐）
-    //         this.poseLandmarker.detectForVideo(this.video, startTimeMs, (result) => {
-    //             // 清空画布
-    //             this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-                
-    //             // 绘制检测结果
-    //             if (result.landmarks) {
-    //                 for (const landmarks of result.landmarks) {
-    //                     // 绘制关键点
-    //                     this.drawingUtils.drawLandmarks(landmarks, {
-    //                         radius: (data) => DrawingUtils.lerp(data.from.z, -0.15, 0.1, 5, 1)
-    //                     });
-    //                     // 绘制连接线
-    //                     this.drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
-    //                 }
-    //             }
-    //             // 处理并发送检测结果
-    //             this.processAndSendResult(result, startTimeMs);
-    //         });
-    //     }
-
-    //     // 持续检测
-    //     if (this.webcamRunning) {
-    //         requestAnimationFrame(() => this.predictWebcam());
-    //     }
-    // }
-
 
     async predictWebcam() {
         if (!this.webcamRunning || !this.poseLandmarker) {
@@ -201,82 +160,56 @@ class PoseDetector {
         }
 
         try {
-            // 设置canvas尺寸
             if (this.video.videoWidth && this.video.videoHeight) {
                 this.canvasElement.width = this.video.videoWidth;
                 this.canvasElement.height = this.video.videoHeight;
             }
 
-            // 只在视频帧更新时检测
             if (this.lastVideoTime !== this.video.currentTime) {
                 this.lastVideoTime = this.video.currentTime;
                 const startTimeMs = performance.now();
                 
-                // 使用Promise包装检测过程
-                await new Promise((resolve) => {
-                    this.poseLandmarker.detectForVideo(this.video, startTimeMs, (result) => {
-                        try {
-                            // 清空画布
-                            this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-                            
-                            // 绘制检测结果
-                            if (result.landmarks) {
-                                for (const landmarks of result.landmarks) {
-                                    this.drawingUtils.drawLandmarks(landmarks, { radius: 3 });
-                                    this.drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
-                                }
-                            }
-                            
-                            // 处理并发送结果
-                            this.processAndSendResult(result, startTimeMs);
-                            resolve();
-                        } catch (drawError) {
-                            console.error('绘制错误:', drawError);
-                            resolve(); // 即使绘制错误也继续
+                this.poseLandmarker.detectForVideo(this.video, startTimeMs, (result) => {
+                    this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
+                    
+                    if (result.landmarks) {
+                        for (const landmarks of result.landmarks) {
+                            this.drawingUtils.drawLandmarks(landmarks, { radius: 3 });
+                            this.drawingUtils.drawConnectors(landmarks, PoseLandmarker.POSE_CONNECTIONS);
                         }
-                    });
+                    }
+                    
+                    this.processAndSendResult(result, startTimeMs);
                 });
             }
         } catch (error) {
             console.error('预测循环错误:', error);
-            // 错误时等待一小段时间再继续，避免快速循环出错
-            await new Promise(resolve => setTimeout(resolve, 100));
         }
 
-        // 持续检测
         if (this.webcamRunning) {
             this.animationFrameId = requestAnimationFrame(() => this.predictWebcam());
         }
     }
 
-
-    // 发送函数
     processAndSendResult(result, timestamp) {
-        // 控制发送频率
         const currentTime = Date.now();
         if (currentTime - this.lastSendTime < this.sendInterval) {
             return;
         }
         this.lastSendTime = currentTime;
 
-                // 构建姿势数据
         const poseData = this.buildPoseData(result, currentTime);
         this.frameCount++;
-                // 发送到后端（非阻塞）
+        this.frameCountElement.textContent = this.frameCount;
+
+        // 非阻塞发送
         this.sendToBackend(poseData).catch(error => {
-            // 这里捕获sendToBackend中的未捕获错误，但不要影响主流程
-            console.warn('发送数据失败（非阻塞错误）:', error.message);
+            // 静默处理错误，不影响主流程
         });
-                // 大幅减少控制台输出
-        if (this.frameCount % 100 === 0) {
-            console.log(`📊 已处理 ${this.frameCount} 帧`);
-        }
     }
 
-// 新增：构建姿势数据的独立方法
     buildPoseData(result, currentTime) {
         return {
-            // 关键点数据
             left_shoulder: this.getLandmarkData(result.landmarks, 11),
             right_shoulder: this.getLandmarkData(result.landmarks, 12),
             left_elbow: this.getLandmarkData(result.landmarks, 13),
@@ -294,7 +227,6 @@ class PoseDetector {
             left_foot_index: this.getLandmarkData(result.landmarks, 31),
             right_foot_index: this.getLandmarkData(result.landmarks, 32),
             
-            // 元数据
             type: "video_frame",
             frame_number: this.frameCount,
             time_seconds: (currentTime - this.startTime) / 1000,
@@ -302,10 +234,6 @@ class PoseDetector {
         };
     }
 
-
-
-    
-    // 获取关键点数据的辅助函数
     getLandmarkData(landmarks, index) {
         if (landmarks && landmarks[0] && landmarks[0][index]) {
             const landmark = landmarks[0][index];
@@ -316,16 +244,9 @@ class PoseDetector {
                 visibility: parseFloat((landmark.visibility || 0).toFixed(6))
             };
         }
-        // 如果没有检测到关键点，返回默认值
-        return {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-            visibility: 0.0
-        };
+        return { x: 0.0, y: 0.0, z: 0.0, visibility: 0.0 };
     }
 
-    // 格式化时间函数 (HH:MM:SS)
     formatTime(seconds) {
         const hrs = Math.floor(seconds / 3600);
         const mins = Math.floor((seconds % 3600) / 60);
@@ -334,74 +255,51 @@ class PoseDetector {
     }
 
     async sendToBackend(poseData) {
-        // 如果后端不可用，跳过发送但不停止检测
         if (!this.backendAvailable) {
             return;
         }
+
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 1500); // 5秒超时
-            // 方法1: 使用 fetch 发送到后端 API
+            // 使用更简单的超时处理
             const response = await fetch('http://localhost:5000/api/pose-data', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(poseData),
-                signal: controller.signal
+                body: JSON.stringify(poseData)
             });
 
-            clearTimeout(timeoutId);
-
             if (response.ok) {
-                const result = await response.json();
-                this.backendRetryCount = 0; // 重置重试计数
-                if (this.frameCount % 50 === 0) { // 进一步减少日志
-                    console.log('✅ 后端响应正常');
-                }
-            }else {
-                console.warn(`⚠️ 后端响应异常: ${response.status}`);
-                this.handleBackendError();
-            }
-        } catch (error) {
-            console.warn('❌ 后端连接失败:', error.message);
-            this.handleBackendError();
-        }
-    }    
-// 新增：专门处理后端错误
-    handleBackendError() {
-        this.backendRetryCount++;
-        
-        if (this.backendRetryCount >= this.maxRetryCount) {
-            this.backendAvailable = false;
-            console.warn('🔴 后端暂时不可用，停止发送数据（检测继续）');
-            
-            // 30秒后自动重试
-            setTimeout(() => {
-                this.backendAvailable = true;
                 this.backendRetryCount = 0;
-                console.log('🟡 重新尝试连接后端...');
-            }, 30000);
+                this.updateStatus('backendStatus', '连接正常', 'green');
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        } catch (error) {
+            this.backendRetryCount++;
+            
+            if (this.backendRetryCount >= this.maxRetryCount) {
+                this.backendAvailable = false;
+                this.updateStatus('backendStatus', '连接失败', 'red');
+                
+                // 60秒后自动重试
+                setTimeout(() => {
+                    this.backendAvailable = true;
+                    this.backendRetryCount = 0;
+                    this.updateStatus('backendStatus', '重连中...', 'orange');
+                }, 60000);
+            }
         }
     }
 
-    // 新增：测试后端连接的方法
-    async testBackendConnection() {
-        try {
-            const response = await fetch('http://localhost:5000/api/test', {
-                method: 'GET',
-                signal: AbortSignal.timeout(3000)
-            });
-            
-            if (response.ok) {
-                this.isBackendAvailable = true;
-                console.log('后端连接已恢复');
-            }
-        } catch (error) {
-            // 测试失败，保持当前状态
+    updateStatus(elementId, text, color) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = text;
+            element.style.color = color;
         }
     }
-    // 页面关闭时自动清理
+
     destroy() {
         this.stopWebcam();
     }
@@ -413,4 +311,11 @@ const poseDetector = new PoseDetector();
 // 页面关闭时自动停止摄像头
 window.addEventListener('beforeunload', () => {
     poseDetector.destroy();
+});
+
+// 处理页面可见性变化
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        poseDetector.stopWebcam();
+    }
 });

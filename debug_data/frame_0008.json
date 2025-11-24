@@ -1,0 +1,102 @@
+{
+  "left_shoulder": {
+    "x": 0.889923,
+    "y": 0.772297,
+    "z": -1.704962,
+    "visibility": 0
+  },
+  "right_shoulder": {
+    "x": 0.229523,
+    "y": 0.816837,
+    "z": -2.054721,
+    "visibility": 0
+  },
+  "left_elbow": {
+    "x": 0.930381,
+    "y": 1.306053,
+    "z": -1.391731,
+    "visibility": 0
+  },
+  "right_elbow": {
+    "x": 0.103408,
+    "y": 1.340878,
+    "z": -1.875732,
+    "visibility": 0
+  },
+  "left_wrist": {
+    "x": 0.89447,
+    "y": 1.632451,
+    "z": -1.689437,
+    "visibility": 0
+  },
+  "right_wrist": {
+    "x": 0.177635,
+    "y": 1.841438,
+    "z": -1.972532,
+    "visibility": 0
+  },
+  "left_hip": {
+    "x": 0.778888,
+    "y": 1.801944,
+    "z": 0.151707,
+    "visibility": 0
+  },
+  "right_hip": {
+    "x": 0.387105,
+    "y": 1.856392,
+    "z": -0.141205,
+    "visibility": 0
+  },
+  "left_knee": {
+    "x": 0.8115,
+    "y": 2.568193,
+    "z": 0.721892,
+    "visibility": 0
+  },
+  "right_knee": {
+    "x": 0.447604,
+    "y": 2.697229,
+    "z": 0.132301,
+    "visibility": 0
+  },
+  "left_ankle": {
+    "x": 0.760584,
+    "y": 3.166704,
+    "z": 2.752413,
+    "visibility": 0
+  },
+  "right_ankle": {
+    "x": 0.410379,
+    "y": 3.392723,
+    "z": 1.61912,
+    "visibility": 0
+  },
+  "left_heel": {
+    "x": 0.73817,
+    "y": 3.238093,
+    "z": 2.962451,
+    "visibility": 0
+  },
+  "right_heel": {
+    "x": 0.391022,
+    "y": 3.481062,
+    "z": 1.757015,
+    "visibility": 0
+  },
+  "left_foot_index": {
+    "x": 0.783123,
+    "y": 3.492375,
+    "z": 2.520458,
+    "visibility": 0
+  },
+  "right_foot_index": {
+    "x": 0.505633,
+    "y": 3.698923,
+    "z": 1.083979,
+    "visibility": 0
+  },
+  "type": "video_frame",
+  "frame_number": 8,
+  "time_seconds": 10.785,
+  "time_format": "0:00:10"
+}
